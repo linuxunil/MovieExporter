@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from unittest.mock import patch, mock_open
 from omdb_exporter import (
@@ -7,7 +9,39 @@ from omdb_exporter import (
     generate_sql,
     generate_rating_sql
 )
-
+@pytest.fixture
+def dune_json() -> dict[str | Any, str | Any]:
+    return {
+        "Title": "Dune",
+        "Year": "1984",
+        "Rated": "PG-13",
+        "Released": "14 Dec 1984",
+        "Runtime": "137 min",
+        "Genre": "Action, Adventure, Sci-Fi",
+        "Director": "David Lynch",
+        "Writer": "Frank Herbert, David Lynch",
+        "Actors": "Kyle MacLachlan, Virginia Madsen, Francesca Annis",
+        "Plot": "A Duke's son leads desert warriors against the galactic emperor and his father's evil nemesis to free their desert world from the emperor's rule.",
+        "Language": "English",
+        "Country": "United States, Mexico",
+        "Awards": "Nominated for 1 Oscar. 2 wins & 7 nominations total",
+        "Poster": "https://m.media-amazon.com/images/M/MV5BMGJlMGM3NDAtOWNhMy00MWExLWI2MzEtMDQ0ZDIzZDY5ZmQ2XkEyXkFqcGc@._V1_SX300.jpg",
+        "Ratings": [
+            {"Source": "Internet Movie Database", "Value": "6.3/10"},
+            {"Source": "Rotten Tomatoes", "Value": "36%"},
+            {"Source": "Metacritic", "Value": "41/100"}
+        ],
+        "Metascore": "41",
+        "imdbRating": "6.3",
+        "imdbVotes": "188,960",
+        "imdbID": "tt0087182",
+        "Type": "movie",
+        "DVD": "N/A",
+        "BoxOffice": "$31,439,560",
+        "Production": "N/A",
+        "Website": "N/A",
+        "Response": "True"
+    }
 # -----------------------------
 # Test: load_imdb_ids
 # -----------------------------
@@ -34,10 +68,45 @@ def test_sql_escape(input_val, expected):
 # Test: fetch_movie (mocked API)
 # -----------------------------
 @patch("omdb_exporter.requests.get")
-def test_fetch_movie(mock_get):
-    mock_get.return_value.json.return_value = {"Title": "Test Movie", "Response": "True"}
-    result = fetch_movie("tt1234567")
-    assert result["Title"] == "Test Movie"
+def test_fetch_movie_dune(mock_get, dune_json):
+
+    mock_get.return_value.json.return_value = dune_json
+
+    result = fetch_movie("tt0087182")
+
+    assert result["Title"] == "Dune"
+    assert result["Year"] == "1984"
+    assert result["Rated"] == "PG-13"
+    assert result["Released"] == "14 Dec 1984"
+    assert result["Runtime"] == "137 min"
+    assert result["Genre"] == "Action, Adventure, Sci-Fi"
+    assert result["Director"] == "David Lynch"
+    assert result["Writer"] == "Frank Herbert, David Lynch"
+    assert result["Actors"] == "Kyle MacLachlan, Virginia Madsen, Francesca Annis"
+    assert result["Plot"] == (
+        "A Duke's son leads desert warriors against the galactic emperor and his father's evil nemesis "
+        "to free their desert world from the emperor's rule."
+    )
+    assert result["Language"] == "English"
+    assert result["Country"] == "United States, Mexico"
+    assert result["Awards"] == "Nominated for 1 Oscar. 2 wins & 7 nominations total"
+    assert result["Poster"] == "https://m.media-amazon.com/images/M/MV5BMGJlMGM3NDAtOWNhMy00MWExLWI2MzEtMDQ0ZDIzZDY5ZmQ2XkEyXkFqcGc@._V1_SX300.jpg"
+    assert result["Ratings"] == [
+        {"Source": "Internet Movie Database", "Value": "6.3/10"},
+        {"Source": "Rotten Tomatoes", "Value": "36%"},
+        {"Source": "Metacritic", "Value": "41/100"}
+    ]
+    assert result["Metascore"] == "41"
+    assert result["imdbRating"] == "6.3"
+    assert result["imdbVotes"] == "188,960"
+    assert result["imdbID"] == "tt0087182"
+    assert result["Type"] == "movie"
+    assert result["DVD"] == "N/A"
+    assert result["BoxOffice"] == "$31,439,560"
+    assert result["Production"] == "N/A"
+    assert result["Website"] == "N/A"
+    assert result["Response"] == "True"
+
 
 # -----------------------------
 # Test: generate_sql (mocked fetch and file write)
@@ -45,35 +114,9 @@ def test_fetch_movie(mock_get):
 @patch("omdb_exporter.fetch_movie")
 @patch("builtins.open", new_callable=mock_open)
 @patch("omdb_exporter.time.sleep", return_value=None)  # skip delay
-def test_generate_sql(mock_sleep, mock_file, mock_fetch):
-    mock_fetch.return_value = {
-        "Response": "True",
-        "imdbID": "tt1234567",
-        "Title": "Test",
-        "Year": "2020",
-        "Rated": "PG",
-        "Released": "01 Jan 2020",
-        "Runtime": "120 min",
-        "Genre": "Drama",
-        "Director": "Someone",
-        "Writer": "Someone Else",
-        "Actors": "Actor A, Actor B",
-        "Plot": "A test plot.",
-        "Language": "English",
-        "Country": "USA",
-        "Awards": "None",
-        "Poster": "http://example.com",
-        "Metascore": "70",
-        "imdbRating": "8.0",
-        "imdbVotes": "10,000",
-        "Type": "movie",
-        "DVD": "N/A",
-        "BoxOffice": "N/A",
-        "Production": "Studio",
-        "Website": "N/A",
-        "Response": "True"
-    }
-    generate_sql(["tt1234567"], "output.sql")
+def test_generate_sql(mock_sleep, mock_file, mock_fetch, dune_json):
+    mock_fetch.return_value = dune_json
+    generate_sql(["tt0087182"], "output.sql")
     mock_file().write.assert_called()  # ensure file was written
 
 # -----------------------------
@@ -82,13 +125,7 @@ def test_generate_sql(mock_sleep, mock_file, mock_fetch):
 @patch("omdb_exporter.fetch_movie")
 @patch("builtins.open", new_callable=mock_open)
 @patch("omdb_exporter.time.sleep", return_value=None)  # skip delay
-def test_generate_rating_sql(mock_sleep, mock_file, mock_fetch):
-    mock_fetch.return_value = {
-        "Response": "True",
-        "Ratings": [
-            {"Source": "Internet Movie Database", "Value": "8.5/10"},
-            {"Source": "Rotten Tomatoes", "Value": "95%"}
-        ]
-    }
-    generate_rating_sql(["tt1234567"], "ratings.sql")
+def test_generate_rating_sql(mock_sleep, mock_file, mock_fetch, dune_json):
+    mock_fetch.return_value = dune_json
+    generate_rating_sql(["tt0087182"], "ratings.sql")
     mock_file().write.assert_called()
