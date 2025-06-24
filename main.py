@@ -1,6 +1,8 @@
 # This library gives us access to Operating System utilites, ie. loading the env variables.
 import os
 
+# This is where we will put our program code.
+import omdb_exporter
 from dotenv import load_dotenv
 
 # This function reads the .env file and gives us environment variables
