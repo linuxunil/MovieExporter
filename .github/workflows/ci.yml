@@ -28,7 +28,7 @@ jobs:
         run: uv sync
 
       - name: unittest
-        run: uv run pytest tests
+        run: uv run pytest --pyargs movie
 
       - name: lint
         run: uv run ruff check
