@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 from unittest.mock import patch, mock_open
-from omdb_exporter import (
+from movie.omdb_exporter import (
     load_imdb_ids,
     fetch_movie,
     sql_escape,
