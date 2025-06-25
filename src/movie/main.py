@@ -2,7 +2,7 @@
 import os
 
 # This is where we will put our program code.
-import omdb_exporter
+from src.movie import omdb_exporter
 from dotenv import load_dotenv
 
 # This function reads the .env file and gives us environment variables
