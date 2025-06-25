@@ -1,0 +1,35 @@
+name: ci.yml
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Install the latest UV
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "latest"
+          enable-cache: true
+          cache-suffix: "optional-suffix"
+
+      - name: Setup Python
+        run: uv python install
+
+      - name: Install deps
+        run: uv sync
+
+      - name: unittest
+        run: uv run pytest tests
+
+      - name: lint
+        run: uv run ruff check
+
+      - name: format
+        run: uv run ruff format
